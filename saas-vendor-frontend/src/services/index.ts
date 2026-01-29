@@ -1,0 +1,6 @@
+export { authService } from './authService'
+export { userService } from './userService'
+export { dealService } from './dealService'
+export { claimService } from './claimService'
+export { adminService } from './adminService'
+export { default as api } from './api'
