@@ -13,6 +13,8 @@ import userRoutes from './routes/userRoutes';
 import dealRoutes from './routes/dealRoutes';
 import claimRoutes from './routes/claimRoutes';
 import adminRoutes from './routes/adminRoutes';
+import { Deal } from './models/Deal';
+import { User } from './models/User';
 
 // Middleware
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -55,8 +57,21 @@ app.post('/api/seed-deals', async (_req: Request, res: Response): Promise<void> 
   }
 
   try {
-    const { Deal } = await import('./models/Deal');
+    // First, create or get the system admin user
+    let systemUser = await User.findOne({ email: 'system@deals.com' });
     
+    if (!systemUser) {
+      systemUser = await User.create({
+        firstName: 'System',
+        lastName: 'Admin',
+        email: 'system@deals.com',
+        password: 'system-password-hash', // In real scenario, this should be hashed
+        role: 'admin',
+        isVerified: true,
+        kycStatus: 'approved',
+      });
+    }
+
     const sampleDeals = [
       {
         title: 'AWS Credits for Startups',
@@ -81,7 +96,7 @@ app.post('/api/seed-deals', async (_req: Request, res: Response): Promise<void> 
         },
         highlights: ['No credit card required', 'Instant activation'],
         tags: ['cloud', 'hosting', 'infrastructure'],
-        createdBy: 'system',
+        createdBy: systemUser._id,
       },
       {
         title: 'HubSpot for Startups',
@@ -106,7 +121,7 @@ app.post('/api/seed-deals', async (_req: Request, res: Response): Promise<void> 
         },
         highlights: ['CRM included', 'Marketing automation'],
         tags: ['crm', 'marketing', 'sales'],
-        createdBy: 'system',
+        createdBy: systemUser._id,
       },
       {
         title: 'Slack for Teams',
@@ -131,7 +146,7 @@ app.post('/api/seed-deals', async (_req: Request, res: Response): Promise<void> 
         },
         highlights: ['Unlimited history', 'Integrations support'],
         tags: ['communication', 'team', 'collaboration'],
-        createdBy: 'system',
+        createdBy: systemUser._id,
       },
       {
         title: 'Github Copilot',
@@ -141,7 +156,7 @@ app.post('/api/seed-deals', async (_req: Request, res: Response): Promise<void> 
         originalPrice: 180,
         discountedPrice: 0,
         currency: 'USD',
-        category: 'Development',
+        category: 'Analytics',
         saasTool: 'GitHub Copilot',
         dealDuration: '6 Months',
         partnerName: 'GitHub',
@@ -154,7 +169,7 @@ app.post('/api/seed-deals', async (_req: Request, res: Response): Promise<void> 
         },
         highlights: ['AI-powered coding', 'Works with VS Code'],
         tags: ['development', 'ai', 'coding'],
-        createdBy: 'system',
+        createdBy: systemUser._id,
       },
     ];
 
@@ -272,7 +287,7 @@ export const startServer = async (): Promise<void> => {
     }
 
     // Start server
-    const server = app.listen(PORT, () => {
+    const server = app.listen(PORT as number, '0.0.0.0', () => {
       console.log(`
 ╔════════════════════════════════════════════╗
 ║   SAAS VENDOR - Backend API                ║
@@ -284,13 +299,30 @@ export const startServer = async (): Promise<void> => {
       `);
     });
 
-    // Prevent Node from exiting
-    // Keep strong reference to server
-    server.unref = () => server; // Override unref to prevent garbage collection
-    
-    // Wait forever
-    await new Promise<never>(() => {
-      // Never resolve
+    server.on('error', (err: any) => {
+      console.error('Server error:', err);
+    });
+
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+      console.log('SIGTERM received, shutting down gracefully');
+      server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+      });
+    });
+
+    process.on('SIGINT', () => {
+      console.log('SIGINT received, shutting down gracefully');
+      server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+      });
+    });
+
+    // Don't exit on any unhandled rejections - keep the server running
+    process.on('unhandledRejection', (reason) => {
+      console.error('Unhandled rejection:', reason);
     });
 
   } catch (error: any) {
