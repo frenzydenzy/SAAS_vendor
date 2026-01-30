@@ -5,20 +5,20 @@ export const claimService = {
   createClaim: async (
     data: Types.CreateClaimRequest
   ): Promise<Types.CreateClaimResponse> => {
-    const response = await api.post<Types.CreateClaimResponse>('/claim/create', data)
+    const response = await api.post<Types.CreateClaimResponse>('/claims', data)
     return response.data
   },
 
   getClaims: async (): Promise<Types.UserClaimsListResponse> => {
-    const response = await api.get<Types.UserClaimsListResponse>('/claim/get')
+    const response = await api.get<Types.UserClaimsListResponse>('/claims/my-claims')
     return response.data
   },
 
   approveClaim: async (
     claimId: string
   ): Promise<Types.ApproveClaimResponse> => {
-    const response = await api.post<Types.ApproveClaimResponse>(
-      `/claim/${claimId}/approve`,
+    const response = await api.patch<Types.ApproveClaimResponse>(
+      `/claims/${claimId}/approve`,
       {}
     )
     return response.data
@@ -27,8 +27,8 @@ export const claimService = {
   rejectClaim: async (
     claimId: string
   ): Promise<Types.RejectClaimResponse> => {
-    const response = await api.post<Types.RejectClaimResponse>(
-      `/claim/${claimId}/reject`,
+    const response = await api.patch<Types.RejectClaimResponse>(
+      `/claims/${claimId}/reject`,
       {}
     )
     return response.data

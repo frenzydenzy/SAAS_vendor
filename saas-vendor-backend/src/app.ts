@@ -47,6 +47,137 @@ app.get('/api/health', (_req: Request, res: Response) => {
   });
 });
 
+// Development-only seed endpoint
+app.post('/api/seed-deals', async (_req: Request, res: Response): Promise<void> => {
+  if (process.env.NODE_ENV === 'production') {
+    res.status(403).json({ success: false, message: 'Seeding not allowed in production' });
+    return;
+  }
+
+  try {
+    const { Deal } = await import('./models/Deal');
+    
+    const sampleDeals = [
+      {
+        title: 'AWS Credits for Startups',
+        slug: 'aws-credits-startups',
+        description: 'Get $5,000 in AWS credits for your startup. Valid for 2 years.',
+        shortDescription: '$5,000 AWS Credits',
+        originalPrice: 5000,
+        discountedPrice: 0,
+        currency: 'USD',
+        category: 'Cloud',
+        saasTool: 'AWS',
+        dealDuration: '2 Years',
+        partnerName: 'Amazon Web Services',
+        partnerLogo: 'https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg',
+        partnerWebsite: 'https://aws.amazon.com',
+        partnerDescription: 'Amazon Web Services (AWS) is the world\'s most comprehensive cloud platform.',
+        dealImage: 'https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg',
+        eligibilityConditions: {
+          requiresEmailVerification: true,
+          requiresKYCApproval: true,
+          allowedFundingStages: ['Seed', 'Series A'],
+        },
+        highlights: ['No credit card required', 'Instant activation'],
+        tags: ['cloud', 'hosting', 'infrastructure'],
+        createdBy: 'system',
+      },
+      {
+        title: 'HubSpot for Startups',
+        slug: 'hubspot-for-startups',
+        description: 'Get 90% off HubSpot for the first year.',
+        shortDescription: '90% off HubSpot',
+        originalPrice: 10000,
+        discountedPrice: 1000,
+        currency: 'USD',
+        category: 'Marketing',
+        saasTool: 'HubSpot',
+        dealDuration: '1 Year',
+        partnerName: 'HubSpot',
+        partnerLogo: 'https://upload.wikimedia.org/wikipedia/commons/1/15/HubSpot_Logo.png',
+        partnerWebsite: 'https://www.hubspot.com',
+        partnerDescription: 'HubSpot is a leading CRM platform for customer growth.',
+        dealImage: 'https://upload.wikimedia.org/wikipedia/commons/1/15/HubSpot_Logo.png',
+        eligibilityConditions: {
+          requiresEmailVerification: true,
+          minEmployees: 2,
+          maxEmployees: 50,
+        },
+        highlights: ['CRM included', 'Marketing automation'],
+        tags: ['crm', 'marketing', 'sales'],
+        createdBy: 'system',
+      },
+      {
+        title: 'Slack for Teams',
+        slug: 'slack-for-teams',
+        description: 'Get 1 year of Slack Pro at 50% off.',
+        shortDescription: '50% off Slack Pro',
+        originalPrice: 8000,
+        discountedPrice: 4000,
+        currency: 'USD',
+        category: 'Productivity',
+        saasTool: 'Slack',
+        dealDuration: '1 Year',
+        partnerName: 'Slack',
+        partnerLogo: 'https://upload.wikimedia.org/wikipedia/commons/7/76/Slack_icon.svg',
+        partnerWebsite: 'https://www.slack.com',
+        partnerDescription: 'Slack is a messaging app for teams.',
+        dealImage: 'https://upload.wikimedia.org/wikipedia/commons/7/76/Slack_icon.svg',
+        eligibilityConditions: {
+          requiresEmailVerification: true,
+          minEmployees: 3,
+          maxEmployees: 100,
+        },
+        highlights: ['Unlimited history', 'Integrations support'],
+        tags: ['communication', 'team', 'collaboration'],
+        createdBy: 'system',
+      },
+      {
+        title: 'Github Copilot',
+        slug: 'github-copilot',
+        description: 'Get 6 months of Github Copilot free.',
+        shortDescription: '6 months free GitHub Copilot',
+        originalPrice: 180,
+        discountedPrice: 0,
+        currency: 'USD',
+        category: 'Development',
+        saasTool: 'GitHub Copilot',
+        dealDuration: '6 Months',
+        partnerName: 'GitHub',
+        partnerLogo: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
+        partnerWebsite: 'https://github.com/features/copilot',
+        partnerDescription: 'GitHub Copilot is your AI pair programmer.',
+        dealImage: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
+        eligibilityConditions: {
+          requiresEmailVerification: true,
+        },
+        highlights: ['AI-powered coding', 'Works with VS Code'],
+        tags: ['development', 'ai', 'coding'],
+        createdBy: 'system',
+      },
+    ];
+
+    // Clear existing deals
+    await Deal.deleteMany({});
+
+    // Insert new deals
+    const createdDeals = await Deal.insertMany(sampleDeals);
+
+    res.json({
+      success: true,
+      message: `Successfully seeded ${createdDeals.length} deals`,
+      data: {
+        dealsCreated: createdDeals.length,
+        deals: createdDeals,
+      },
+    });
+  } catch (error: any) {
+    console.error('Seed deals error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/deals', dealRoutes);
