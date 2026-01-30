@@ -8,11 +8,14 @@ const api: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Enable cookies for authentication
 })
 
-// Add request interceptor to include JWT token
+// Add request interceptor to include JWT token from localStorage (fallback)
 api.interceptors.request.use(
   (config) => {
+    // Note: Cookies are automatically sent with withCredentials: true
+    // This is a fallback for any localStorage tokens
     const token = localStorage.getItem('accessToken')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
